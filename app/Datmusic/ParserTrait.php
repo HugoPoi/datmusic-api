@@ -51,15 +51,6 @@ trait ParserTrait
             ]);
         }
 
-        // prefetch mp3 urls of first 2 batches of audios
-        $limit = $this->getAudiosLimit;
-        for ($i = 0; $i < min(count($data), $limit * 2); $i += $limit) {
-            $urls = $this->getUrlsForAudios(array_slice($data, $i, $limit));
-            for ($j = 0; $j < count($urls); $j++) {
-                $data[$j + $i]['mp3'] = $urls[$j];
-            }
-        }
-
         return $data;
     }
 
