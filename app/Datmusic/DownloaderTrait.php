@@ -93,7 +93,7 @@ trait DownloaderTrait
      * @param string $id
      * @param int    $bitrate
      *
-     * @return BinaryFileResponse|RedirectResponse
+     * @return RedirectResponse
      */
     public function bitrateDownload($key, $id, $bitrate)
     {
@@ -108,7 +108,7 @@ trait DownloaderTrait
      * @param bool   $stream
      * @param int    $bitrate
      *
-     * @return BinaryFileResponse|RedirectResponse
+     * @return RedirectResponse
      */
     public function download($key, $id, $stream = false, $bitrate = -1)
     {
@@ -410,29 +410,28 @@ trait DownloaderTrait
     }
 
     /**
-     * Force download given file with given name.
+     * Creates symlink to original mp3 file with given file name at /links/{mp3_hash}/{name}.
+     * For now, we are getting mp3 hash from file name of given path.
      *
      * @param $path string path of the file
      * @param $name string name of the downloading file
      *
-     * @return BinaryFileResponse
+     * @return RedirectResponse
      */
     private function downloadResponse($path, $name)
     {
         $this->checkIsBadMp3($path);
 
-        $headers = [
-            'Cache-Control'     => 'private',
-            'Cache-Description' => 'File Transfer',
-            'Content-Type'      => 'audio/mpeg',
-            'Content-Length'    => filesize($path),
-        ];
+        $fileName = basename($path, '.mp3');
+        $filePath = sprintf('%s/%s', $fileName, $name);
+        $linkFolderPath = sprintf('%s/%s', config('app.paths.links'), $fileName);
+        $linkPath = sprintf('%s/%s', $linkFolderPath, $name);
 
-        return response()->download(
-            $path,
-            $name,
-            $headers
-        );
+        if (file_exists($linkPath) || ((file_exists($linkFolderPath) || mkdir($linkFolderPath, 0777)) && symlink($path, $linkPath))) {
+            return redirect("links/$filePath");
+        }
+
+        abort(500);
     }
 
     /**
